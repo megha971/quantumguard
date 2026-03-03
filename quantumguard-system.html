@@ -1,0 +1,2372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuantumGuard — Decentralized Identity for Farmers</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #050A0F;
+  --bg2: #0A1520;
+  --bg3: #0F1E30;
+  --card: #0D1B28;
+  --card2: #112234;
+  --border: rgba(0,200,120,0.15);
+  --border2: rgba(255,255,255,0.07);
+  --green: #00C878;
+  --green2: #00FF9D;
+  --green-dim: rgba(0,200,120,0.1);
+  --blue: #0099FF;
+  --blue-dim: rgba(0,153,255,0.1);
+  --orange: #FF7A00;
+  --orange-dim: rgba(255,122,0,0.1);
+  --red: #FF4060;
+  --red-dim: rgba(255,64,96,0.1);
+  --yellow: #FFD700;
+  --text: #E8F4F0;
+  --text2: #8BA8A0;
+  --text3: #4A6860;
+  --glow: 0 0 30px rgba(0,200,120,0.15);
+  --glow-blue: 0 0 30px rgba(0,153,255,0.15);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── GRID BG ── */
+body::before {
+  content:'';
+  position:fixed; inset:0; z-index:0;
+  background-image:
+    linear-gradient(rgba(0,200,120,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,120,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events:none;
+}
+
+/* ── LAYOUT ── */
+.app { position:relative; z-index:1; display:flex; min-height:100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 260px; min-height:100vh;
+  background: var(--bg2);
+  border-right: 1px solid var(--border2);
+  display:flex; flex-direction:column;
+  position:fixed; left:0; top:0; bottom:0;
+  z-index: 100;
+}
+
+.sidebar-logo {
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--border2);
+  display:flex; align-items:center; gap:12px;
+}
+
+.logo-icon {
+  width:38px; height:38px;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; flex-shrink:0;
+  box-shadow: 0 0 20px rgba(0,200,120,0.3);
+}
+
+.logo-text { font-family:'Syne',sans-serif; font-weight:800; font-size:16px; letter-spacing:-0.5px; }
+.logo-sub { font-size:10px; color:var(--text3); font-family:'JetBrains Mono',monospace; }
+
+.sidebar-role-badge {
+  margin: 16px 20px;
+  padding: 8px 14px;
+  background: var(--green-dim);
+  border: 1px solid var(--border);
+  border-radius:8px;
+  font-size:11px; font-family:'JetBrains Mono',monospace;
+  color: var(--green);
+  display:flex; align-items:center; gap:8px;
+}
+
+.role-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.nav-section-label {
+  padding: 12px 20px 6px;
+  font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--text3); font-family:'JetBrains Mono',monospace;
+}
+
+.nav-item {
+  display:flex; align-items:center; gap:12px;
+  padding:10px 20px; cursor:pointer;
+  border-radius:0; transition: all 0.2s;
+  font-size:13.5px; color:var(--text2);
+  border-left: 2px solid transparent;
+  user-select:none;
+}
+.nav-item:hover { background:rgba(255,255,255,0.03); color:var(--text); }
+.nav-item.active { background:var(--green-dim); color:var(--green); border-left-color:var(--green); }
+.nav-item .nav-icon { width:18px; text-align:center; font-size:15px; }
+.nav-badge {
+  margin-left:auto; background:var(--red); color:#fff;
+  font-size:10px; padding:1px 6px; border-radius:10px;
+  font-family:'JetBrains Mono',monospace;
+}
+.nav-badge.green { background:var(--green); color:#000; }
+
+.sidebar-bottom {
+  margin-top:auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border2);
+}
+
+.role-switcher {
+  display:flex; gap:6px; flex-wrap:wrap;
+}
+.role-btn {
+  padding: 5px 10px; font-size:10px; cursor:pointer;
+  border-radius:6px; border:1px solid var(--border2);
+  background:transparent; color:var(--text3);
+  font-family:'JetBrains Mono',monospace;
+  transition: all 0.2s;
+}
+.role-btn:hover { border-color:var(--green); color:var(--green); }
+.role-btn.active { background:var(--green); color:#000; border-color:var(--green); font-weight:600; }
+
+/* ── MAIN CONTENT ── */
+.main {
+  margin-left: 260px;
+  flex:1; min-height:100vh;
+  display:flex; flex-direction:column;
+}
+
+.topbar {
+  height:60px; background:var(--bg2);
+  border-bottom: 1px solid var(--border2);
+  display:flex; align-items:center;
+  padding: 0 28px; gap:16px;
+  position:sticky; top:0; z-index:50;
+}
+
+.page-title { font-family:'Syne',sans-serif; font-weight:700; font-size:16px; flex:1; }
+
+.topbar-right { display:flex; align-items:center; gap:12px; margin-left:auto; }
+
+.wallet-badge {
+  display:flex; align-items:center; gap:8px;
+  background:var(--bg3); border:1px solid var(--border2);
+  padding:6px 14px; border-radius:8px; font-size:12px;
+  font-family:'JetBrains Mono',monospace; color:var(--text2);
+}
+
+.chain-badge {
+  display:flex; align-items:center; gap:6px;
+  background:var(--bg3); border:1px solid rgba(130,80,255,0.3);
+  padding:5px 12px; border-radius:8px; font-size:11px;
+  font-family:'JetBrains Mono',monospace; color:#a070ff;
+}
+
+.online-badge {
+  display:flex; align-items:center; gap:6px;
+  font-size:11px; color:var(--green);
+  font-family:'JetBrains Mono',monospace;
+}
+
+.content { padding:28px; flex:1; }
+
+/* ── CARDS ── */
+.card {
+  background:var(--card); border:1px solid var(--border2);
+  border-radius:14px; padding:24px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.card:hover { border-color:var(--border); }
+.card.glow { box-shadow: var(--glow); border-color:var(--border); }
+.card.glow-blue { box-shadow: var(--glow-blue); border-color:rgba(0,153,255,0.2); }
+
+.card-header {
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:20px; padding-bottom:16px;
+  border-bottom:1px solid var(--border2);
+}
+.card-header-icon {
+  width:36px; height:36px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; flex-shrink:0;
+}
+.card-title { font-family:'Syne',sans-serif; font-weight:700; font-size:15px; }
+.card-sub { font-size:11px; color:var(--text3); margin-top:2px; }
+
+/* ── STAT CARDS ── */
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.stat-card {
+  background:var(--card); border:1px solid var(--border2);
+  border-radius:12px; padding:20px;
+  position:relative; overflow:hidden;
+  transition: all 0.2s;
+}
+.stat-card:hover { border-color:var(--border); transform:translateY(-1px); }
+.stat-card::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+}
+.stat-card.green::after { background:linear-gradient(90deg,var(--green),transparent); }
+.stat-card.blue::after { background:linear-gradient(90deg,var(--blue),transparent); }
+.stat-card.orange::after { background:linear-gradient(90deg,var(--orange),transparent); }
+.stat-card.red::after { background:linear-gradient(90deg,var(--red),transparent); }
+
+.stat-icon { font-size:22px; margin-bottom:12px; }
+.stat-val { font-family:'Syne',sans-serif; font-weight:800; font-size:28px; line-height:1; margin-bottom:4px; }
+.stat-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; }
+.stat-change { font-size:11px; margin-top:8px; font-family:'JetBrains Mono',monospace; }
+.stat-change.up { color:var(--green); }
+.stat-change.down { color:var(--red); }
+
+/* ── GRID LAYOUTS ── */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+.grid-6040 { display:grid; grid-template-columns:3fr 2fr; gap:20px; }
+
+/* ── TABLES ── */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead tr { border-bottom:1px solid var(--border2); }
+th { padding:10px 14px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text3); font-weight:500; font-family:'JetBrains Mono',monospace; }
+td { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.03); }
+tbody tr:hover { background:rgba(255,255,255,0.02); }
+tbody tr:last-child td { border-bottom:none; }
+
+/* ── BADGES ── */
+.badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:20px; font-size:11px;
+  font-family:'JetBrains Mono',monospace; font-weight:500;
+}
+.badge.active { background:rgba(0,200,120,0.12); color:var(--green); border:1px solid rgba(0,200,120,0.2); }
+.badge.pending { background:rgba(255,210,0,0.1); color:#FFD700; border:1px solid rgba(255,210,0,0.2); }
+.badge.review { background:rgba(0,153,255,0.1); color:var(--blue); border:1px solid rgba(0,153,255,0.2); }
+.badge.rejected { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,64,96,0.2); }
+.badge.slashed { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,64,96,0.2); }
+.badge.validator { background:rgba(130,80,255,0.12); color:#a070ff; border:1px solid rgba(130,80,255,0.2); }
+.badge.bank { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(0,153,255,0.2); }
+.badge.approved { background:rgba(0,200,120,0.12); color:var(--green); border:1px solid rgba(0,200,120,0.2); }
+.badge.disbursed { background:rgba(255,122,0,0.12); color:var(--orange); border:1px solid rgba(255,122,0,0.2); }
+.badge.repaid { background:rgba(0,200,120,0.12); color:var(--green2); border:1px solid rgba(0,255,157,0.2); }
+
+/* ── BUTTONS ── */
+.btn {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 18px; border-radius:9px; border:none; cursor:pointer;
+  font-size:13px; font-family:'Instrument Sans',sans-serif; font-weight:600;
+  transition: all 0.2s; text-decoration:none;
+}
+.btn-primary { background:var(--green); color:#000; }
+.btn-primary:hover { background:var(--green2); box-shadow:0 0 20px rgba(0,200,120,0.3); transform:translateY(-1px); }
+.btn-secondary { background:var(--bg3); color:var(--text2); border:1px solid var(--border2); }
+.btn-secondary:hover { border-color:var(--green); color:var(--green); }
+.btn-danger { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,64,96,0.3); }
+.btn-danger:hover { background:var(--red); color:#fff; }
+.btn-blue { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(0,153,255,0.3); }
+.btn-blue:hover { background:var(--blue); color:#fff; }
+.btn-sm { padding:6px 12px; font-size:12px; border-radius:7px; }
+.btn-xs { padding:4px 8px; font-size:11px; border-radius:6px; }
+
+/* ── FORMS ── */
+.form-group { margin-bottom:18px; }
+.form-label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text3); margin-bottom:6px; display:block; font-family:'JetBrains Mono',monospace; }
+.form-input, .form-select, .form-textarea {
+  width:100%; padding:10px 14px; background:var(--bg3);
+  border:1px solid var(--border2); border-radius:9px;
+  color:var(--text); font-family:'Instrument Sans',sans-serif; font-size:13px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline:none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color:var(--green); box-shadow:0 0 0 3px rgba(0,200,120,0.1);
+}
+.form-select { cursor:pointer; }
+.form-select option { background:var(--bg2); }
+.form-textarea { resize:vertical; min-height:80px; }
+
+/* ── PROGRESS / SCORE ── */
+.progress-bar { height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; }
+.progress-fill { height:100%; border-radius:3px; transition:width 1s ease; }
+
+.credit-ring {
+  position:relative; display:inline-flex;
+  align-items:center; justify-content:center;
+}
+.credit-ring svg { transform:rotate(-90deg); }
+.credit-ring-text {
+  position:absolute; text-align:center;
+}
+.credit-ring-val { font-family:'Syne',sans-serif; font-weight:800; font-size:22px; display:block; }
+.credit-ring-label { font-size:10px; color:var(--text3); }
+
+/* ── TIMELINE ── */
+.timeline { padding-left:0; list-style:none; }
+.timeline-item {
+  display:flex; gap:14px; padding-bottom:20px;
+  position:relative;
+}
+.timeline-item::before {
+  content:''; position:absolute; left:18px; top:32px; bottom:0;
+  width:1px; background:var(--border2);
+}
+.timeline-item:last-child::before { display:none; }
+.timeline-dot {
+  width:36px; height:36px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; z-index:1;
+}
+.timeline-content { flex:1; padding-top:6px; }
+.timeline-title { font-size:13px; font-weight:600; margin-bottom:3px; }
+.timeline-sub { font-size:11px; color:var(--text3); }
+.timeline-time { font-size:10px; color:var(--text3); margin-top:4px; font-family:'JetBrains Mono',monospace; }
+
+/* ── MODALS ── */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.7);
+  display:flex; align-items:center; justify-content:center;
+  z-index:1000; backdrop-filter:blur(4px);
+  opacity:0; pointer-events:none; transition:opacity 0.2s;
+}
+.modal-overlay.open { opacity:1; pointer-events:all; }
+.modal {
+  background:var(--card); border:1px solid var(--border2);
+  border-radius:18px; padding:28px; width:520px; max-width:95vw;
+  transform:translateY(20px); transition:transform 0.2s;
+  max-height:90vh; overflow-y:auto;
+}
+.modal-overlay.open .modal { transform:translateY(0); }
+.modal-title { font-family:'Syne',sans-serif; font-weight:800; font-size:18px; margin-bottom:6px; }
+.modal-sub { font-size:12px; color:var(--text3); margin-bottom:24px; }
+.modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:24px; padding-top:20px; border-top:1px solid var(--border2); }
+
+/* ── QR CODE ── */
+.qr-wrap {
+  background:#fff; padding:16px; border-radius:12px;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+
+/* ── HASH DISPLAY ── */
+.hash-text {
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  color:var(--text3); word-break:break-all;
+  background:var(--bg); padding:8px 12px; border-radius:7px;
+  border:1px solid var(--border2);
+}
+
+/* ── TOAST ── */
+.toast-container {
+  position:fixed; bottom:24px; right:24px; z-index:2000;
+  display:flex; flex-direction:column; gap:10px;
+}
+.toast {
+  background:var(--card2); border:1px solid var(--border2);
+  border-radius:10px; padding:14px 18px;
+  display:flex; align-items:center; gap:12px;
+  min-width:300px; animation:slideIn 0.3s ease;
+  box-shadow:0 10px 30px rgba(0,0,0,0.4);
+}
+.toast.success { border-left:3px solid var(--green); }
+.toast.error { border-left:3px solid var(--red); }
+.toast.info { border-left:3px solid var(--blue); }
+.toast-icon { font-size:18px; flex-shrink:0; }
+.toast-text { font-size:13px; flex:1; }
+.toast-close { cursor:pointer; color:var(--text3); font-size:16px; }
+@keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+@keyframes fadeOut { to{transform:translateX(110%);opacity:0} }
+
+/* ── STEPPER ── */
+.stepper { display:flex; align-items:center; gap:0; margin-bottom:28px; }
+.step {
+  display:flex; align-items:center; gap:8px; flex:1;
+  position:relative;
+}
+.step::after {
+  content:''; flex:1; height:1px;
+  background:var(--border2); margin:0 8px;
+}
+.step:last-child::after { display:none; }
+.step-circle {
+  width:28px; height:28px; border-radius:50%; flex-shrink:0;
+  border:2px solid var(--border2); display:flex; align-items:center;
+  justify-content:center; font-size:11px; font-family:'JetBrains Mono',monospace;
+  background:var(--bg); transition:all 0.3s; color:var(--text3);
+}
+.step.done .step-circle { background:var(--green); border-color:var(--green); color:#000; }
+.step.active .step-circle { border-color:var(--green); color:var(--green); box-shadow:0 0 0 3px rgba(0,200,120,0.15); }
+.step-label { font-size:11px; color:var(--text3); white-space:nowrap; }
+.step.active .step-label { color:var(--green); }
+.step.done .step-label { color:var(--text2); }
+
+/* ── BLOCKCHAIN VIZ ── */
+.block-chain { display:flex; align-items:center; gap:0; overflow-x:auto; padding:4px 0; }
+.block {
+  background:var(--bg3); border:1px solid var(--border2);
+  border-radius:8px; padding:10px 14px; min-width:140px; flex-shrink:0;
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  transition:all 0.2s;
+}
+.block:hover { border-color:var(--green); }
+.block.latest { border-color:rgba(0,200,120,0.3); background:var(--green-dim); }
+.block-num { color:var(--green); font-weight:600; margin-bottom:4px; }
+.block-hash { color:var(--text3); margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.block-tx { color:var(--text2); }
+.block-arrow { color:var(--text3); padding:0 8px; font-size:16px; flex-shrink:0; }
+
+/* ── BIOMETRIC ── */
+.biometric-scan {
+  width:120px; height:120px; border-radius:50%;
+  border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  position:relative; margin:0 auto;
+}
+.biometric-scan::before {
+  content:''; position:absolute; inset:-6px;
+  border-radius:50%; border:2px solid transparent;
+  border-top-color:var(--green);
+  animation: spin 2s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.biometric-icon { font-size:40px; }
+
+.scan-line {
+  position:absolute; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--green),transparent);
+  animation:scanDown 2s ease-in-out infinite;
+}
+@keyframes scanDown { 0%{top:10%} 50%{top:85%} 100%{top:10%} }
+
+/* ── PAGES ── */
+.page { display:none; animation:fadeIn 0.3s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── MISC ── */
+.section-title { font-family:'Syne',sans-serif; font-weight:700; font-size:14px; margin-bottom:16px; display:flex; align-items:center; gap:8px; color:var(--text2); }
+.divider { height:1px; background:var(--border2); margin:20px 0; }
+.mono { font-family:'JetBrains Mono',monospace; font-size:12px; }
+.text-green { color:var(--green); }
+.text-red { color:var(--red); }
+.text-blue { color:var(--blue); }
+.text-orange { color:var(--orange); }
+.text-dim { color:var(--text2); }
+.text-dimmer { color:var(--text3); }
+.mt-4 { margin-top:16px; }
+.mt-6 { margin-top:24px; }
+.mb-4 { margin-bottom:16px; }
+.flex { display:flex; }
+.flex-center { display:flex; align-items:center; }
+.gap-2 { gap:8px; }
+.gap-3 { gap:12px; }
+.gap-4 { gap:16px; }
+.flex-between { display:flex; align-items:center; justify-content:space-between; }
+.bold { font-weight:700; }
+.small { font-size:12px; }
+.w-full { width:100%; }
+.justify-end { justify-content:flex-end; }
+.items-start { align-items:flex-start; }
+
+/* ── IDENTITY CARD ── */
+.id-card {
+  background: linear-gradient(135deg, #0A1E35, #0D2840);
+  border:1px solid rgba(0,200,120,0.25);
+  border-radius:16px; padding:24px;
+  position:relative; overflow:hidden;
+}
+.id-card::before {
+  content:''; position:absolute; top:-40px; right:-40px;
+  width:150px; height:150px; border-radius:50%;
+  background:radial-gradient(circle,rgba(0,200,120,0.08),transparent);
+}
+.id-card-did {
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  color:var(--green); margin-bottom:8px;
+}
+.id-card-name { font-family:'Syne',sans-serif; font-weight:800; font-size:20px; margin-bottom:4px; }
+.id-card-role { font-size:12px; color:var(--text2); margin-bottom:16px; }
+
+/* ── APPROVAL CARD ── */
+.approval-card {
+  background:var(--card); border:1px solid var(--border2);
+  border-radius:12px; overflow:hidden; transition:all 0.2s;
+}
+.approval-card:hover { border-color:var(--border); }
+.approval-header { padding:16px 20px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border2); }
+.approval-avatar {
+  width:40px; height:40px; border-radius:10px;
+  background:linear-gradient(135deg,var(--green-dim),var(--blue-dim));
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+}
+.approval-body { padding:16px 20px; }
+.approval-footer { padding:12px 20px; border-top:1px solid var(--border2); display:flex; gap:8px; justify-content:flex-end; }
+
+/* ── CHAIN STATUS ── */
+.chain-status {
+  display:flex; align-items:center; gap:8px;
+  padding:6px 12px; border-radius:8px;
+  background:var(--bg3); border:1px solid var(--border2);
+  font-size:11px; font-family:'JetBrains Mono',monospace;
+}
+.chain-dot { width:8px; height:8px; border-radius:50%; }
+
+/* ── LOAN CARD ── */
+.loan-card {
+  background:var(--card); border:1px solid var(--border2);
+  border-radius:12px; padding:20px; transition:all 0.2s;
+}
+.loan-card:hover { border-color:var(--border); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--bg3); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:var(--text3); }
+
+/* ── NOTIFICATION BELL ── */
+.notif-btn {
+  position:relative; width:36px; height:36px;
+  background:var(--bg3); border:1px solid var(--border2);
+  border-radius:9px; display:flex; align-items:center;
+  justify-content:center; cursor:pointer; font-size:16px;
+  transition:all 0.2s;
+}
+.notif-btn:hover { border-color:var(--green); }
+.notif-dot {
+  position:absolute; top:6px; right:6px;
+  width:8px; height:8px; background:var(--red);
+  border-radius:50%; border:2px solid var(--bg2);
+}
+
+/* ── VALIDATOR STAKE ── */
+.stake-card {
+  background: linear-gradient(135deg, #0D1B28, #0F2035);
+  border:1px solid rgba(130,80,255,0.2);
+  border-radius:12px; padding:20px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width:900px) {
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .grid-2, .grid-3, .grid-6040 { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🌿</div>
+      <div>
+        <div class="logo-text">QuantumGuard</div>
+        <div class="logo-sub">v2.0 · Polygon Amoy</div>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge" id="roleBadge">
+      <div class="role-dot"></div>
+      <span id="roleLabel">Farmer</span>
+      <span style="margin-left:auto;font-size:10px;color:var(--text3)">DID#1042</span>
+    </div>
+
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="nav-icon">⬡</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('identity')">
+      <span class="nav-icon">🪪</span> My Identity
+    </div>
+    <div class="nav-item" onclick="showPage('register')">
+      <span class="nav-icon">✦</span> Register DID
+    </div>
+
+    <div class="nav-section-label">Finance</div>
+    <div class="nav-item" onclick="showPage('loans')">
+      <span class="nav-icon">💳</span> Loans
+      <span class="nav-badge green">2</span>
+    </div>
+    <div class="nav-item" onclick="showPage('credit')">
+      <span class="nav-icon">📈</span> Credit Score
+    </div>
+    <div class="nav-item" onclick="showPage('land')">
+      <span class="nav-icon">🗺</span> Land Records
+    </div>
+
+    <div class="nav-section-label">Validator</div>
+    <div class="nav-item" onclick="showPage('validator')">
+      <span class="nav-icon">✅</span> Approvals
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item" onclick="showPage('staking')">
+      <span class="nav-icon">🔒</span> Staking
+    </div>
+
+    <div class="nav-section-label">Institution</div>
+    <div class="nav-item" onclick="showPage('verify')">
+      <span class="nav-icon">🏦</span> Verify DID
+    </div>
+
+    <div class="nav-section-label">System</div>
+    <div class="nav-item" onclick="showPage('blockchain')">
+      <span class="nav-icon">⛓</span> Blockchain
+    </div>
+    <div class="nav-item" onclick="showPage('settings')">
+      <span class="nav-icon">⚙</span> Settings
+    </div>
+
+    <div class="sidebar-bottom">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-family:'JetBrains Mono',monospace;">SWITCH ROLE (DEMO)</div>
+      <div class="role-switcher">
+        <button class="role-btn active" onclick="switchRole('farmer',this)">Farmer</button>
+        <button class="role-btn" onclick="switchRole('validator',this)">Validator</button>
+        <button class="role-btn" onclick="switchRole('bank',this)">Bank</button>
+        <button class="role-btn" onclick="switchRole('admin',this)">Admin</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-right">
+        <div class="online-badge"><div class="role-dot"></div> Online · Synced</div>
+        <div class="chain-badge">⬡ Polygon Amoy</div>
+        <div class="wallet-badge">🔑 0x7a3F...d9C2</div>
+        <div class="notif-btn" onclick="showPage('notifications')">🔔<div class="notif-dot"></div></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══════════════════════════════════════ DASHBOARD ══ -->
+      <div id="page-dashboard" class="page active">
+        <div class="stats-grid">
+          <div class="stat-card green">
+            <div class="stat-icon">🪪</div>
+            <div class="stat-val text-green">1,247</div>
+            <div class="stat-label">Total DIDs</div>
+            <div class="stat-change up">↑ +43 this week</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-icon">✅</div>
+            <div class="stat-val text-blue">986</div>
+            <div class="stat-label">Active Identities</div>
+            <div class="stat-change up">↑ 79.1% activation rate</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">💰</div>
+            <div class="stat-val text-orange">₹4.2Cr</div>
+            <div class="stat-label">Loans Disbursed</div>
+            <div class="stat-change up">↑ +₹38L this month</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-val" style="color:var(--yellow)">312</div>
+            <div class="stat-label">Pending Approvals</div>
+            <div class="stat-change down">↓ 28 awaiting validator</div>
+          </div>
+        </div>
+
+        <div class="grid-6040">
+          <!-- Recent DIDs -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:var(--green-dim)">🪪</div>
+              <div>
+                <div class="card-title">Recent Registrations</div>
+                <div class="card-sub">Latest DID minting events on Polygon</div>
+              </div>
+              <button class="btn btn-sm btn-secondary" style="margin-left:auto" onclick="showPage('register')">+ Register</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>DID</th><th>Farmer</th><th>Village</th><th>Status</th><th>Approvals</th><th>Date</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono text-green">#1247</td><td>Ramesh Kumar</td><td>Nashik, MH</td><td><span class="badge active">Active</span></td><td>3/3</td><td class="text-dimmer small">2h ago</td></tr>
+                  <tr><td class="mono text-green">#1246</td><td>Priya Devi</td><td>Patna, BR</td><td><span class="badge review">Reviewing</span></td><td>2/3</td><td class="text-dimmer small">5h ago</td></tr>
+                  <tr><td class="mono text-green">#1245</td><td>Sundar Lal</td><td>Jaipur, RJ</td><td><span class="badge review">Reviewing</span></td><td>1/3</td><td class="text-dimmer small">8h ago</td></tr>
+                  <tr><td class="mono text-green">#1244</td><td>Kavitha S.</td><td>Coimbatore, TN</td><td><span class="badge active">Active</span></td><td>3/3</td><td class="text-dimmer small">1d ago</td></tr>
+                  <tr><td class="mono text-green">#1243</td><td>Mohan Yadav</td><td>Lucknow, UP</td><td><span class="badge pending">Pending</span></td><td>0/3</td><td class="text-dimmer small">1d ago</td></tr>
+                  <tr><td class="mono text-green">#1242</td><td>Anita Bai</td><td>Bhopal, MP</td><td><span class="badge active">Active</span></td><td>3/3</td><td class="text-dimmer small">2d ago</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Activity Feed -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:var(--blue-dim)">⚡</div>
+              <div>
+                <div class="card-title">Live Activity</div>
+                <div class="card-sub">Real-time blockchain events</div>
+              </div>
+            </div>
+            <ul class="timeline">
+              <li class="timeline-item">
+                <div class="timeline-dot" style="background:var(--green-dim);color:var(--green)">🪪</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">DID #1247 Activated</div>
+                  <div class="timeline-sub">Ramesh Kumar · 3 validators approved</div>
+                  <div class="timeline-time">2 min ago · tx 0x7f3a...c92d</div>
+                </div>
+              </li>
+              <li class="timeline-item">
+                <div class="timeline-dot" style="background:var(--orange-dim);color:var(--orange)">💰</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Loan ₹50,000 Disbursed</div>
+                  <div class="timeline-sub">Anita Bai · SBI Grameen Bank</div>
+                  <div class="timeline-time">18 min ago · tx 0x2c1b...a8f1</div>
+                </div>
+              </li>
+              <li class="timeline-item">
+                <div class="timeline-dot" style="background:var(--blue-dim);color:var(--blue)">✅</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Validator Approved DID #1246</div>
+                  <div class="timeline-sub">Validator Arjun · 2/3 approvals</div>
+                  <div class="timeline-time">34 min ago · tx 0xb4d2...7e30</div>
+                </div>
+              </li>
+              <li class="timeline-item">
+                <div class="timeline-dot" style="background:rgba(0,255,157,0.1);color:var(--green2)">🗺</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Land Record Verified</div>
+                  <div class="timeline-sub">Kavitha S. · 2.3 acres, Coimbatore</div>
+                  <div class="timeline-time">1h ago · tx 0x9a4c...12b7</div>
+                </div>
+              </li>
+              <li class="timeline-item">
+                <div class="timeline-dot" style="background:var(--green-dim);color:var(--green)">📈</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Credit Score Updated</div>
+                  <div class="timeline-sub">Mohan Yadav · 580 → 640</div>
+                  <div class="timeline-time">2h ago · IPFS QmXz7...</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Blockchain Status Row -->
+        <div class="card mt-6" style="margin-top:20px">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:rgba(130,80,255,0.1)">⛓</div>
+            <div>
+              <div class="card-title">Polygon Blockchain Status</div>
+              <div class="card-sub">Live chain data — Amoy Testnet</div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:10px">
+              <div class="chain-status"><div class="chain-dot" style="background:var(--green)"></div>Connected</div>
+              <div class="chain-status"><div class="chain-dot" style="background:var(--blue)"></div>Block #47,382,910</div>
+            </div>
+          </div>
+          <div class="block-chain">
+            <div class="block latest">
+              <div class="block-num">Block #47,382,910</div>
+              <div class="block-hash">0x7f3a9c2d...e8b1</div>
+              <div class="block-tx">3 QG txns</div>
+            </div>
+            <div class="block-arrow">←</div>
+            <div class="block">
+              <div class="block-num">Block #47,382,909</div>
+              <div class="block-hash">0x2c1ba8f1...d4a9</div>
+              <div class="block-tx">1 QG txn</div>
+            </div>
+            <div class="block-arrow">←</div>
+            <div class="block">
+              <div class="block-num">Block #47,382,908</div>
+              <div class="block-hash">0xb4d27e30...9c12</div>
+              <div class="block-tx">2 QG txns</div>
+            </div>
+            <div class="block-arrow">←</div>
+            <div class="block">
+              <div class="block-num">Block #47,382,907</div>
+              <div class="block-hash">0x9a4c12b7...f033</div>
+              <div class="block-tx">0 QG txns</div>
+            </div>
+            <div class="block-arrow">←</div>
+            <div class="block">
+              <div class="block-num">Block #47,382,906</div>
+              <div class="block-hash">0x3d8e45a2...c711</div>
+              <div class="block-tx">1 QG txn</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ MY IDENTITY ══ -->
+      <div id="page-identity" class="page">
+        <div class="grid-6040">
+          <!-- Identity Card -->
+          <div>
+            <div class="id-card mb-4">
+              <div class="id-card-did">⬡ DID #1042 · QuantumGuard Network</div>
+              <div class="id-card-name">Ramesh Kumar</div>
+              <div class="id-card-role">🌾 Farmer · Nashik, Maharashtra</div>
+              <div class="flex-between">
+                <div>
+                  <div class="small text-dimmer">Wallet</div>
+                  <div class="mono small" style="color:var(--text2)">0x7a3F...d9C2</div>
+                </div>
+                <div>
+                  <div class="small text-dimmer">Status</div>
+                  <span class="badge active">● Active</span>
+                </div>
+                <div>
+                  <div class="small text-dimmer">Since</div>
+                  <div class="small">Jan 15, 2025</div>
+                </div>
+              </div>
+              <div class="divider"></div>
+              <div class="flex gap-3">
+                <button class="btn btn-primary btn-sm" onclick="openModal('qrModal')">📱 Show QR</button>
+                <button class="btn btn-secondary btn-sm" onclick="openModal('shareModal')">🔗 Share DID</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:var(--green-dim)">🔐</div>
+                <div><div class="card-title">Identity Security</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div class="flex-between">
+                  <span class="small text-dimmer">Biometric (Face)</span>
+                  <span class="badge active">✓ Verified</span>
+                </div>
+                <div class="flex-between">
+                  <span class="small text-dimmer">Fingerprint</span>
+                  <span class="badge active">✓ Verified</span>
+                </div>
+                <div class="flex-between">
+                  <span class="small text-dimmer">Wallet Signature</span>
+                  <span class="badge active">✓ Linked</span>
+                </div>
+                <div class="flex-between">
+                  <span class="small text-dimmer">IPFS Hash</span>
+                  <span class="badge review">On-Chain</span>
+                </div>
+                <div class="flex-between">
+                  <span class="small text-dimmer">Recovery Addresses</span>
+                  <span class="small text-green">2 / 3 configured</span>
+                </div>
+                <div class="divider"></div>
+                <div class="hash-text">QmXz7b4Ra9nK2Lm3pJ8vDcF1sT6wNqA0eYhXuWoRtGiVbMkPlSdCfZxQy</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Validators + Timeline -->
+          <div>
+            <div class="card mb-4" style="margin-bottom:16px">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:rgba(130,80,255,0.1)">👥</div>
+                <div><div class="card-title">My Validators</div><div class="card-sub">3 of 3 approved</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div class="flex-between">
+                  <div class="flex-center gap-2">
+                    <div style="width:32px;height:32px;border-radius:8px;background:var(--green-dim);display:flex;align-items:center;justify-content:center">👨‍🌾</div>
+                    <div><div class="small bold">Arjun Singh</div><div class="mono" style="font-size:10px;color:var(--text3)">0x4F2a...b391</div></div>
+                  </div>
+                  <span class="badge approved">✓ Approved</span>
+                </div>
+                <div class="flex-between">
+                  <div class="flex-center gap-2">
+                    <div style="width:32px;height:32px;border-radius:8px;background:var(--green-dim);display:flex;align-items:center;justify-content:center">👩‍🌾</div>
+                    <div><div class="small bold">Meera Patil</div><div class="mono" style="font-size:10px;color:var(--text3)">0x9cD1...f022</div></div>
+                  </div>
+                  <span class="badge approved">✓ Approved</span>
+                </div>
+                <div class="flex-between">
+                  <div class="flex-center gap-2">
+                    <div style="width:32px;height:32px;border-radius:8px;background:var(--green-dim);display:flex;align-items:center;justify-content:center">👨</div>
+                    <div><div class="small bold">Rajan Verma</div><div class="mono" style="font-size:10px;color:var(--text3)">0x2bA8...44c7</div></div>
+                  </div>
+                  <span class="badge approved">✓ Approved</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:var(--blue-dim)">📋</div>
+                <div><div class="card-title">Identity History</div></div>
+              </div>
+              <ul class="timeline" style="padding-top:4px">
+                <li class="timeline-item">
+                  <div class="timeline-dot" style="background:var(--green-dim);color:var(--green)">🪪</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">DID Activated</div>
+                    <div class="timeline-sub">3/3 validators approved</div>
+                    <div class="timeline-time">Jan 18, 2025 · tx 0x7f3a...c92d</div>
+                  </div>
+                </li>
+                <li class="timeline-item">
+                  <div class="timeline-dot" style="background:var(--blue-dim);color:var(--blue)">✅</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Rajan Verma Approved</div>
+                    <div class="timeline-sub">3rd validator approval</div>
+                    <div class="timeline-time">Jan 18, 2025 · tx 0x9b2c...d1f4</div>
+                  </div>
+                </li>
+                <li class="timeline-item">
+                  <div class="timeline-dot" style="background:var(--blue-dim);color:var(--blue)">✅</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Meera Patil Approved</div>
+                    <div class="timeline-sub">2nd validator approval</div>
+                    <div class="timeline-time">Jan 17, 2025</div>
+                  </div>
+                </li>
+                <li class="timeline-item">
+                  <div class="timeline-dot" style="background:var(--blue-dim);color:var(--blue)">✅</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">Arjun Singh Approved</div>
+                    <div class="timeline-sub">1st validator approval</div>
+                    <div class="timeline-time">Jan 16, 2025</div>
+                  </div>
+                </li>
+                <li class="timeline-item">
+                  <div class="timeline-dot" style="background:var(--green-dim);color:var(--green)">✦</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">DID Registered</div>
+                    <div class="timeline-sub">Identity uploaded to IPFS + blockchain</div>
+                    <div class="timeline-time">Jan 15, 2025 · DID #1042</div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ REGISTER DID ══ -->
+      <div id="page-register" class="page">
+        <div style="max-width:680px;margin:0 auto">
+          <div class="stepper" id="regStepper">
+            <div class="step active" id="step0"><div class="step-circle">1</div><div class="step-label">Personal Info</div></div>
+            <div class="step" id="step1"><div class="step-circle">2</div><div class="step-label">Biometrics</div></div>
+            <div class="step" id="step2"><div class="step-circle">3</div><div class="step-label">Validators</div></div>
+            <div class="step" id="step3"><div class="step-circle">4</div><div class="step-label">Submit</div></div>
+          </div>
+
+          <!-- Step 1 -->
+          <div id="regStep0" class="card">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:var(--green-dim)">👤</div>
+              <div><div class="card-title">Personal Information</div><div class="card-sub">This data is AES-256 encrypted before IPFS upload</div></div>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input class="form-input" id="r_name" placeholder="Enter full name" value="Sunita Devi">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Date of Birth</label>
+                <input class="form-input" id="r_dob" type="date" value="1985-03-12">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Village / Town</label>
+                <input class="form-input" id="r_village" placeholder="Village or town" value="Wardha">
+              </div>
+              <div class="form-group">
+                <label class="form-label">District & State</label>
+                <input class="form-input" id="r_district" placeholder="District, State" value="Wardha, Maharashtra">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input class="form-input" id="r_phone" placeholder="+91 XXXXXXXXXX" value="+91 9876543210">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Occupation</label>
+                <select class="form-select" id="r_occ">
+                  <option>Farmer - Crop</option>
+                  <option>Farmer - Livestock</option>
+                  <option>Farmer - Mixed</option>
+                  <option>Farm Labour</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Wallet Address</label>
+              <input class="form-input" id="r_wallet" value="0x8d4F2c9b1a3E7f0D6e2C5A8b4d1F9e3C2a7B0f5D">
+            </div>
+            <div style="margin-top:8px;padding:12px;background:var(--green-dim);border-radius:8px;border:1px solid var(--border);font-size:12px;color:var(--text2)">
+              🔐 Your personal data will be <strong style="color:var(--green)">AES-256 encrypted</strong> and only the IPFS hash stored on the blockchain. No PII is ever on-chain.
+            </div>
+            <div class="flex justify-end mt-4" style="margin-top:20px">
+              <button class="btn btn-primary" onclick="regNext(0)">Continue →</button>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div id="regStep1" class="card" style="display:none">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:var(--blue-dim)">🔐</div>
+              <div><div class="card-title">Biometric Capture</div><div class="card-sub">All processing is done on-device. Only a hash is stored.</div></div>
+            </div>
+            <div class="grid-2" style="margin-bottom:24px">
+              <!-- Face -->
+              <div style="text-align:center;padding:24px;background:var(--bg3);border-radius:12px;border:1px solid var(--border2)" id="faceCapture">
+                <div class="biometric-scan" id="faceScan" style="margin-bottom:16px">
+                  <div class="scan-line" style="display:none" id="faceScanLine"></div>
+                  <div class="biometric-icon" id="faceIcon">😐</div>
+                </div>
+                <div style="font-size:13px;font-weight:600;margin-bottom:6px">Face Recognition</div>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:16px">FaceNet TFLite · On-device inference</div>
+                <button class="btn btn-blue btn-sm w-full" id="faceBtn" onclick="captureFace()">📷 Capture Selfie</button>
+                <div id="faceStatus" style="margin-top:8px;font-size:11px;color:var(--text3)">Not captured</div>
+              </div>
+              <!-- Fingerprint -->
+              <div style="text-align:center;padding:24px;background:var(--bg3);border-radius:12px;border:1px solid var(--border2)" id="fpCapture">
+                <div class="biometric-scan" id="fpScan" style="margin-bottom:16px">
+                  <div class="biometric-icon" id="fpIcon">👆</div>
+                </div>
+                <div style="font-size:13px;font-weight:600;margin-bottom:6px">Fingerprint Scan</div>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:16px">LocalAuth API · Device-level security</div>
+                <button class="btn btn-blue btn-sm w-full" id="fpBtn" onclick="captureFingerprint()">👆 Scan Fingerprint</button>
+                <div id="fpStatus" style="margin-top:8px;font-size:11px;color:var(--text3)">Not captured</div>
+              </div>
+            </div>
+            <div id="biometricHash" style="display:none;margin-bottom:16px">
+              <div class="form-label">Generated Biometric Hash (SHA-256)</div>
+              <div class="hash-text" id="bioHashText"></div>
+            </div>
+            <div class="flex-between mt-4" style="margin-top:16px">
+              <button class="btn btn-secondary" onclick="regBack(1)">← Back</button>
+              <button class="btn btn-primary" id="bioNextBtn" onclick="regNext(1)" disabled>Continue →</button>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div id="regStep2" class="card" style="display:none">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:rgba(130,80,255,0.1)">👥</div>
+              <div><div class="card-title">Nominate Validators</div><div class="card-sub">Select 3 trusted community members to verify your identity</div></div>
+            </div>
+            <div style="padding:12px;background:var(--bg3);border-radius:8px;margin-bottom:20px;font-size:12px;color:var(--text2)">
+              ⚠️ Validators must have staked MATIC on the QuantumGuard contract. They will verify your documents and approve your DID.
+            </div>
+            <div class="form-group">
+              <label class="form-label">Validator 1 — Wallet Address</label>
+              <input class="form-input" id="v1" placeholder="0x..." value="0x4F2a9c1b3d8e7f2A0b6C4d9E1f3a2B8c5D7e0F1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Validator 2 — Wallet Address</label>
+              <input class="form-input" id="v2" placeholder="0x..." value="0x9cD1f0224b7E3a8C1d5F2e0A4b6D8c3E7f1A2B9">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Validator 3 — Wallet Address</label>
+              <input class="form-input" id="v3" placeholder="0x..." value="0x2bA844c7E9f1D3a0B6c2F8e4A1d7C5b3E0f9A2D">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Recovery Addresses (Optional — for emergency access)</label>
+              <input class="form-input" placeholder="0x... (comma separated)" value="0xF3a1...c92d, 0x8bD2...f041">
+            </div>
+            <div class="flex-between mt-4" style="margin-top:16px">
+              <button class="btn btn-secondary" onclick="regBack(2)">← Back</button>
+              <button class="btn btn-primary" onclick="regNext(2)">Continue →</button>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div id="regStep3" class="card" style="display:none">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:var(--green-dim)">🚀</div>
+              <div><div class="card-title">Review & Submit</div><div class="card-sub">Your identity will be encrypted and submitted to Polygon</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px">
+              <div class="flex-between" style="padding:12px 16px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Name</span><span class="small bold" id="rev_name">Sunita Devi</span>
+              </div>
+              <div class="flex-between" style="padding:12px 16px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Location</span><span class="small" id="rev_loc">Wardha, Maharashtra</span>
+              </div>
+              <div class="flex-between" style="padding:12px 16px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Face Biometric</span><span class="badge active">✓ Captured</span>
+              </div>
+              <div class="flex-between" style="padding:12px 16px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Fingerprint</span><span class="badge active">✓ Scanned</span>
+              </div>
+              <div class="flex-between" style="padding:12px 16px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Validators</span><span class="small text-green">3 nominated</span>
+              </div>
+              <div class="flex-between" style="padding:12px 16px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Network</span><span class="mono small">Polygon Amoy</span>
+              </div>
+              <div class="flex-between" style="padding:12px 16px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Est. Gas</span><span class="mono small text-green">~0.002 MATIC (~$0.001)</span>
+              </div>
+            </div>
+            <div id="submitProgress" style="display:none;margin-bottom:16px">
+              <div id="submitStep" style="font-size:12px;color:var(--text2);margin-bottom:8px">Encrypting data...</div>
+              <div class="progress-bar"><div class="progress-fill" id="submitBar" style="width:0%;background:var(--green)"></div></div>
+            </div>
+            <div class="flex-between">
+              <button class="btn btn-secondary" onclick="regBack(3)">← Back</button>
+              <button class="btn btn-primary" id="submitBtn" onclick="submitDID()">🚀 Submit to Blockchain</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ VALIDATOR APPROVALS ══ -->
+      <div id="page-validator" class="page">
+        <div class="flex-between mb-4" style="margin-bottom:20px">
+          <div>
+            <div style="font-size:13px;color:var(--text3)">3 pending approvals require your attention</div>
+          </div>
+          <div class="flex gap-2">
+            <div class="chain-status"><div class="chain-dot" style="background:var(--green)"></div>Staked: 0.05 MATIC</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <!-- Approval Card 1 -->
+          <div class="approval-card">
+            <div class="approval-header">
+              <div class="approval-avatar">🧑‍🌾</div>
+              <div style="flex:1">
+                <div style="font-weight:700">Priya Devi</div>
+                <div class="mono small text-dimmer">DID #1246 · 0x9cD1...f022</div>
+              </div>
+              <span class="badge review">2/3 Approvals</span>
+              <div style="margin-left:8px;font-size:11px;color:var(--text3)">5h ago</div>
+            </div>
+            <div class="approval-body">
+              <div class="grid-3" style="gap:12px;margin-bottom:14px">
+                <div><div class="form-label">Location</div><div class="small">Patna, Bihar</div></div>
+                <div><div class="form-label">Occupation</div><div class="small">Farmer - Crop</div></div>
+                <div><div class="form-label">Biometric</div><span class="badge active">✓ Verified</span></div>
+              </div>
+              <div class="form-label">IPFS Identity Document</div>
+              <div class="hash-text">QmPb3c9Ta2nM1Lp4qK7vEeA8sU5xNrB6fZhWuVsRoHiTaMkQlRdBgYxPw</div>
+              <div class="mt-4" style="margin-top:12px">
+                <div class="form-label">Validator Notes</div>
+                <textarea class="form-textarea" style="min-height:60px" placeholder="Add notes about your verification..." id="notes1246"></textarea>
+              </div>
+            </div>
+            <div class="approval-footer">
+              <button class="btn btn-danger btn-sm" onclick="rejectDID(1246)">✗ Reject</button>
+              <button class="btn btn-primary btn-sm" onclick="approveDID(1246)">✓ Approve Identity</button>
+            </div>
+          </div>
+
+          <!-- Approval Card 2 -->
+          <div class="approval-card">
+            <div class="approval-header">
+              <div class="approval-avatar">👨‍🌾</div>
+              <div style="flex:1">
+                <div style="font-weight:700">Sundar Lal</div>
+                <div class="mono small text-dimmer">DID #1245 · 0x2bA8...44c7</div>
+              </div>
+              <span class="badge pending">1/3 Approvals</span>
+              <div style="margin-left:8px;font-size:11px;color:var(--text3)">8h ago</div>
+            </div>
+            <div class="approval-body">
+              <div class="grid-3" style="gap:12px;margin-bottom:14px">
+                <div><div class="form-label">Location</div><div class="small">Jaipur, Rajasthan</div></div>
+                <div><div class="form-label">Occupation</div><div class="small">Farmer - Mixed</div></div>
+                <div><div class="form-label">Biometric</div><span class="badge active">✓ Verified</span></div>
+              </div>
+              <div class="form-label">IPFS Identity Document</div>
+              <div class="hash-text">QmRt1a8Sb3nN2Mp5rL0qJ9wFfC7vDdB4gAhViUsQoGjTbNkPlScEzYuOv</div>
+            </div>
+            <div class="approval-footer">
+              <button class="btn btn-danger btn-sm" onclick="rejectDID(1245)">✗ Reject</button>
+              <button class="btn btn-primary btn-sm" onclick="approveDID(1245)">✓ Approve Identity</button>
+            </div>
+          </div>
+
+          <!-- Approval Card 3 -->
+          <div class="approval-card">
+            <div class="approval-header">
+              <div class="approval-avatar">👩</div>
+              <div style="flex:1">
+                <div style="font-weight:700">Mohan Yadav</div>
+                <div class="mono small text-dimmer">DID #1243 · 0x8dC3...b129</div>
+              </div>
+              <span class="badge pending">0/3 Approvals</span>
+              <div style="margin-left:8px;font-size:11px;color:var(--text3)">1d ago</div>
+            </div>
+            <div class="approval-body">
+              <div class="grid-3" style="gap:12px;margin-bottom:14px">
+                <div><div class="form-label">Location</div><div class="small">Lucknow, UP</div></div>
+                <div><div class="form-label">Occupation</div><div class="small">Farmer - Livestock</div></div>
+                <div><div class="form-label">Biometric</div><span class="badge active">✓ Verified</span></div>
+              </div>
+              <div class="form-label">IPFS Identity Document</div>
+              <div class="hash-text">QmKc4d7Ue5oO3Nq6sM2pI1tGgH8wEeC5hBiWrVpPoFkUcLjQmSaBxZtNu</div>
+            </div>
+            <div class="approval-footer">
+              <button class="btn btn-danger btn-sm" onclick="rejectDID(1243)">✗ Reject</button>
+              <button class="btn btn-primary btn-sm" onclick="approveDID(1243)">✓ Approve Identity</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ STAKING ══ -->
+      <div id="page-staking" class="page">
+        <div class="grid-2">
+          <div>
+            <div class="stake-card mb-4" style="margin-bottom:16px">
+              <div style="font-size:11px;color:#a070ff;margin-bottom:12px;font-family:'JetBrains Mono',monospace">⬡ VALIDATOR STAKE</div>
+              <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:32px;margin-bottom:4px">0.05 MATIC</div>
+              <div style="font-size:12px;color:var(--text3);margin-bottom:16px">≈ $0.05 · Minimum: 0.01 MATIC</div>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+                <div class="flex-between"><span class="small text-dimmer">Total Approvals</span><span class="small bold text-green">142</span></div>
+                <div class="flex-between"><span class="small text-dimmer">Fraud Count</span><span class="small bold">0</span></div>
+                <div class="flex-between"><span class="small text-dimmer">Slash Risk</span><span class="badge active">Low</span></div>
+                <div class="flex-between"><span class="small text-dimmer">Earned Rewards</span><span class="small bold text-green">+0.012 MATIC</span></div>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn btn-primary btn-sm" onclick="openModal('stakeModal')">+ Add Stake</button>
+                <button class="btn btn-secondary btn-sm">Withdraw</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:rgba(255,64,96,0.1)">⚡</div>
+                <div><div class="card-title">Slash Mechanism</div><div class="card-sub">Protects network integrity</div></div>
+              </div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">
+                If fraud is detected, <strong style="color:var(--red)">50% of your stake</strong> is slashed and your validator role is revoked. The slashed amount goes to the protocol treasury.
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                  <span class="small text-dimmer">Slash Rate</span><span class="small bold text-red">50%</span>
+                </div>
+                <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                  <span class="small text-dimmer">Min Stake</span><span class="mono small">0.01 MATIC</span>
+                </div>
+                <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                  <span class="small text-dimmer">Slash Trigger</span><span class="small">Admin + 2/3 council</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:var(--blue-dim)">📊</div>
+              <div><div class="card-title">Top Validators</div><div class="card-sub">Ranked by approvals</div></div>
+            </div>
+            <table>
+              <thead><tr><th>#</th><th>Validator</th><th>Stake</th><th>Approvals</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td class="text-green bold">1</td><td>Arjun Singh</td><td class="mono">0.15 MATIC</td><td class="text-green">342</td><td><span class="badge active">Active</span></td></tr>
+                <tr><td class="text-green bold">2</td><td>Meera Patil</td><td class="mono">0.12 MATIC</td><td class="text-green">289</td><td><span class="badge active">Active</span></td></tr>
+                <tr><td class="text-green bold">3</td><td>You</td><td class="mono">0.05 MATIC</td><td class="text-green">142</td><td><span class="badge active">Active</span></td></tr>
+                <tr><td class="text-dimmer">4</td><td>Rajan Verma</td><td class="mono">0.05 MATIC</td><td>118</td><td><span class="badge active">Active</span></td></tr>
+                <tr><td class="text-dimmer">5</td><td>Deepak Joshi</td><td class="mono">0.02 MATIC</td><td>67</td><td><span class="badge active">Active</span></td></tr>
+                <tr><td class="text-dimmer">6</td><td>Ramya S.</td><td class="mono">0.01 MATIC</td><td>43</td><td><span class="badge active">Active</span></td></tr>
+                <tr><td class="text-dimmer">7</td><td>Prakash T.</td><td class="mono">0.01 MATIC</td><td>12</td><td><span class="badge slashed">Slashed</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ CREDIT SCORE ══ -->
+      <div id="page-credit" class="page">
+        <div class="grid-6040">
+          <div>
+            <div class="card mb-4" style="margin-bottom:16px">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:var(--green-dim)">📈</div>
+                <div><div class="card-title">Credit Score</div><div class="card-sub">On-chain verified · IPFS backed</div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:32px;padding:8px 0 16px">
+                <div class="credit-ring">
+                  <svg width="120" height="120" viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="52" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+                    <circle cx="60" cy="60" r="52" fill="none" stroke="var(--green)" stroke-width="10"
+                      stroke-dasharray="326.7" stroke-dashoffset="98" stroke-linecap="round"/>
+                  </svg>
+                  <div class="credit-ring-text">
+                    <span class="credit-ring-val text-green">680</span>
+                    <span class="credit-ring-label">/ 850</span>
+                  </div>
+                </div>
+                <div style="flex:1">
+                  <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--green)">Good</div>
+                  <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Eligible for loans up to ₹1,36,000</div>
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <div class="flex-between"><span class="small text-dimmer">Loans Repaid</span><span class="small text-green">3</span></div>
+                    <div class="flex-between"><span class="small text-dimmer">Defaults</span><span class="small">0</span></div>
+                    <div class="flex-between"><span class="small text-dimmer">Crop Sales</span><span class="small text-green">8</span></div>
+                    <div class="flex-between"><span class="small text-dimmer">Land Verified</span><span class="small text-green">✓</span></div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="form-label mb-4" style="margin-bottom:8px">Score Bands</div>
+                <div style="display:flex;height:24px;border-radius:6px;overflow:hidden;margin-bottom:8px">
+                  <div style="flex:1;background:#FF4060;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">300</div>
+                  <div style="flex:1;background:#FF7A00;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">450</div>
+                  <div style="flex:1;background:#FFD700;display:flex;align-items:center;justify-content:center;font-size:9px;color:#000">550</div>
+                  <div style="flex:2;background:#00C878;display:flex;align-items:center;justify-content:center;font-size:9px;color:#000">650 ← You</div>
+                  <div style="flex:1;background:#00FF9D;display:flex;align-items:center;justify-content:center;font-size:9px;color:#000">750+</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3)">
+                  <span>Very Poor</span><span>Poor</span><span>Fair</span><span style="color:var(--green)">Good ▲</span><span>Excellent</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:var(--blue-dim)">🏦</div>
+                <div><div class="card-title">Report Credit Event</div><div class="card-sub">Banks & institutions</div></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Event Type</label>
+                <select class="form-select" id="creditEventType">
+                  <option value="loan_repaid">Loan Repaid</option>
+                  <option value="loan_taken">Loan Taken</option>
+                  <option value="loan_default">Loan Default</option>
+                  <option value="crop_sale">Crop Sale</option>
+                  <option value="land_verified">Land Verified</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Amount (₹)</label>
+                <input class="form-input" id="creditAmount" placeholder="e.g. 50000" value="50000">
+              </div>
+              <div class="form-group">
+                <label class="form-label">DID</label>
+                <input class="form-input" id="creditDID" placeholder="DID number" value="1042">
+              </div>
+              <button class="btn btn-primary w-full" style="width:100%" onclick="reportCreditEvent()">Submit to IPFS + Blockchain</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:var(--orange-dim)">📋</div>
+              <div><div class="card-title">Credit History</div><div class="card-sub">All events on-chain</div></div>
+            </div>
+            <ul class="timeline">
+              <li class="timeline-item">
+                <div class="timeline-dot" style="background:var(--green-dim);color:var(--green)">💰</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Loan Repaid · ₹50,000</div>
+                  <div class="timeline-sub">SBI Grameen Bank · +40 pts</div>
+                  <div class="timeline-time">Feb 10, 2025</div>
+                </div>
+              </li>
+              <li class="timeline-item">
+                <div class="timeline-dot" style="background:var(--green-dim);color:var(--green)">🌾</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Crop Sale · ₹85,000</div>
+                  <div class="timeline-sub">Wheat harvest · +20 pts</div>
+                  <div class="timeline-time">Jan 28, 2025</div>
+                </div>
+              </li>
+              <li class="timeline-item">
+                <div class="timeline-dot" style="background:var(--orange-dim);color:var(--orange)">🏦</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Loan Taken · ₹50,000</div>
+                  <div class="timeline-sub">NABARD Kisan Credit · -5 pts</div>
+                  <div class="timeline-time">Jan 5, 2025</div>
+                </div>
+              </li>
+              <li class="timeline-item">
+                <div class="timeline-dot" style="background:var(--green-dim);color:var(--green)">🗺</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Land Verified</div>
+                  <div class="timeline-sub">2.4 acres · Nashik · +30 pts</div>
+                  <div class="timeline-time">Jan 18, 2025</div>
+                </div>
+              </li>
+              <li class="timeline-item">
+                <div class="timeline-dot" style="background:var(--green-dim);color:var(--green)">💰</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">Loan Repaid · ₹30,000</div>
+                  <div class="timeline-sub">Cooperative Bank · +40 pts</div>
+                  <div class="timeline-time">Nov 20, 2024</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ LOANS ══ -->
+      <div id="page-loans" class="page">
+        <div class="flex-between mb-4" style="margin-bottom:20px">
+          <div style="font-size:13px;color:var(--text3)">Manage microloans backed by on-chain DID verification</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('loanModal')">+ Apply for Loan</button>
+        </div>
+
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
+          <div class="stat-card green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-val text-green">₹1.5L</div>
+            <div class="stat-label">Total Borrowed</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-icon">💳</div>
+            <div class="stat-val text-blue">₹50k</div>
+            <div class="stat-label">Active Balance</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">📅</div>
+            <div class="stat-val text-orange">Apr 5</div>
+            <div class="stat-label">Next Due Date</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="loan-card">
+            <div class="flex-between mb-4" style="margin-bottom:12px">
+              <div>
+                <div style="font-weight:700;margin-bottom:2px">SBI Grameen Kisan Credit</div>
+                <div class="mono small text-dimmer">Loan #L-2025-0043 · DID #1042</div>
+              </div>
+              <span class="badge disbursed">Disbursed</span>
+            </div>
+            <div class="grid-3" style="gap:12px;margin-bottom:16px">
+              <div><div class="form-label">Amount</div><div class="bold">₹50,000</div></div>
+              <div><div class="form-label">Interest Rate</div><div>7.5% p.a.</div></div>
+              <div><div class="form-label">Due Date</div><div>Apr 5, 2025</div></div>
+            </div>
+            <div class="form-label mb-4" style="margin-bottom:6px">Repayment Progress</div>
+            <div class="progress-bar" style="height:8px;margin-bottom:6px"><div class="progress-fill" style="width:0%;background:var(--blue)"></div></div>
+            <div class="flex-between small text-dimmer">
+              <span>₹0 paid</span><span>₹50,000 remaining</span>
+            </div>
+            <div class="flex gap-2" style="margin-top:12px">
+              <button class="btn btn-primary btn-sm" onclick="repayLoan()">💳 Repay Now</button>
+              <button class="btn btn-secondary btn-sm">View Details</button>
+            </div>
+          </div>
+
+          <div class="loan-card">
+            <div class="flex-between mb-4" style="margin-bottom:12px">
+              <div>
+                <div style="font-weight:700;margin-bottom:2px">NABARD Micro Agriculture Loan</div>
+                <div class="mono small text-dimmer">Loan #L-2024-0187 · DID #1042</div>
+              </div>
+              <span class="badge repaid">Repaid</span>
+            </div>
+            <div class="grid-3" style="gap:12px;margin-bottom:16px">
+              <div><div class="form-label">Amount</div><div class="bold">₹30,000</div></div>
+              <div><div class="form-label">Interest Rate</div><div>8% p.a.</div></div>
+              <div><div class="form-label">Repaid On</div><div class="text-green">Nov 20, 2024</div></div>
+            </div>
+            <div class="progress-bar" style="height:8px;margin-bottom:6px"><div class="progress-fill" style="width:100%;background:var(--green)"></div></div>
+            <div class="flex-between small"><span class="text-green">✓ Fully repaid</span><span class="text-dimmer">₹30,000 / ₹30,000</span></div>
+          </div>
+
+          <div class="loan-card" style="border-color:rgba(255,210,0,0.2)">
+            <div class="flex-between mb-4" style="margin-bottom:12px">
+              <div>
+                <div style="font-weight:700;margin-bottom:2px">IFFCO Kisan Input Loan</div>
+                <div class="mono small text-dimmer">Loan #L-2025-0071 · DID #1042</div>
+              </div>
+              <span class="badge pending">Under Review</span>
+            </div>
+            <div class="grid-3" style="gap:12px">
+              <div><div class="form-label">Requested</div><div class="bold">₹75,000</div></div>
+              <div><div class="form-label">Purpose</div><div>Fertilizer & Seeds</div></div>
+              <div><div class="form-label">Applied On</div><div>Mar 1, 2025</div></div>
+            </div>
+            <div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:8px;font-size:12px;color:var(--text2)">
+              ⏳ Bank is verifying your DID on Polygon blockchain...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ LAND RECORDS ══ -->
+      <div id="page-land" class="page">
+        <div class="grid-6040">
+          <div>
+            <div class="card mb-4" style="margin-bottom:16px">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:var(--green-dim)">🗺</div>
+                <div><div class="card-title">Submit Land Record</div><div class="card-sub">Geotagged proof stored on IPFS + Polygon</div></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Geotagged Photo (IPFS Hash)</label>
+                <input class="form-input" id="landPhoto" placeholder="Upload photo to get IPFS hash" value="QmLand...">
+                <div style="font-size:11px;color:var(--text3);margin-top:4px">Photo is geotagged and timestamped automatically</div>
+              </div>
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label">Latitude</label>
+                  <input class="form-input" id="landLat" placeholder="20.1234" value="20.1432">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Longitude</label>
+                  <input class="form-input" id="landLng" placeholder="74.5678" value="74.2901">
+                </div>
+              </div>
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label">Area (Acres)</label>
+                  <input class="form-input" id="landArea" value="2.4">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Crop Type</label>
+                  <select class="form-select">
+                    <option>Wheat</option>
+                    <option>Rice</option>
+                    <option>Cotton</option>
+                    <option>Sugarcane</option>
+                    <option>Soybean</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn btn-primary w-full" style="width:100%" onclick="submitLandRecord()">⛓ Submit to Blockchain</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:var(--blue-dim)">📍</div>
+              <div><div class="card-title">My Land Records</div><div class="card-sub">2 verified on Polygon</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="padding:14px;background:var(--bg3);border-radius:10px;border:1px solid rgba(0,200,120,0.15)">
+                <div class="flex-between mb-4" style="margin-bottom:8px">
+                  <span class="bold">Plot A — Wheat Field</span>
+                  <span class="badge active">✓ Verified</span>
+                </div>
+                <div class="grid-2" style="gap:8px;font-size:12px">
+                  <div><span class="text-dimmer">Area: </span>2.4 acres</div>
+                  <div><span class="text-dimmer">Geohash: </span><span class="mono">tf24xk91</span></div>
+                  <div><span class="text-dimmer">Coords: </span>20.1432, 74.2901</div>
+                  <div><span class="text-dimmer">Verified by: </span>Arjun Singh</div>
+                </div>
+                <div class="hash-text" style="margin-top:8px;font-size:10px">QmX7b4Ra9...GiVbMkPl</div>
+              </div>
+              <div style="padding:14px;background:var(--bg3);border-radius:10px;border:1px solid rgba(0,200,120,0.15)">
+                <div class="flex-between mb-4" style="margin-bottom:8px">
+                  <span class="bold">Plot B — Vegetable Garden</span>
+                  <span class="badge active">✓ Verified</span>
+                </div>
+                <div class="grid-2" style="gap:8px;font-size:12px">
+                  <div><span class="text-dimmer">Area: </span>0.8 acres</div>
+                  <div><span class="text-dimmer">Geohash: </span><span class="mono">tf24xk88</span></div>
+                  <div><span class="text-dimmer">Coords: </span>20.1439, 74.2908</div>
+                  <div><span class="text-dimmer">Verified by: </span>Meera Patil</div>
+                </div>
+                <div class="hash-text" style="margin-top:8px;font-size:10px">QmP3c9Ta2...MkQlRdBg</div>
+              </div>
+              <div style="padding:14px;background:var(--bg3);border-radius:10px;border:1px solid rgba(255,210,0,0.15)">
+                <div class="flex-between mb-4" style="margin-bottom:8px">
+                  <span class="bold">Plot C — Orchard</span>
+                  <span class="badge pending">⏳ Pending</span>
+                </div>
+                <div class="grid-2" style="gap:8px;font-size:12px">
+                  <div><span class="text-dimmer">Area: </span>1.1 acres</div>
+                  <div><span class="text-dimmer">Submitted: </span>2h ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ INSTITUTION VERIFY ══ -->
+      <div id="page-verify" class="page">
+        <div class="grid-2">
+          <div>
+            <div class="card mb-4" style="margin-bottom:16px">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:var(--blue-dim)">🏦</div>
+                <div><div class="card-title">Verify Farmer DID</div><div class="card-sub">OAuth-style DID verification for institutions</div></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Verification Method</label>
+                <select class="form-select" id="verifyMethod">
+                  <option>DID Number</option>
+                  <option>Wallet Address</option>
+                  <option>QR Token</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">DID / Address / Token</label>
+                <input class="form-input" id="verifyInput" placeholder="e.g. 1042" value="1042">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Institution API Key</label>
+                <input class="form-input" type="password" placeholder="sk-inst-..." value="sk-inst-demo-xyz123">
+              </div>
+              <button class="btn btn-primary w-full" style="width:100%" onclick="verifyDID()">🔍 Verify on Blockchain</button>
+            </div>
+
+            <div class="card" id="verifyResult" style="display:none">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:var(--green-dim)">✅</div>
+                <div><div class="card-title">Verification Result</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                  <span class="small text-dimmer">DID</span><span class="mono small text-green">#1042</span>
+                </div>
+                <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                  <span class="small text-dimmer">Status</span><span class="badge active">Active</span>
+                </div>
+                <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                  <span class="small text-dimmer">Blockchain</span><span class="mono small">Polygon Amoy</span>
+                </div>
+                <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                  <span class="small text-dimmer">Credit Score</span><span class="bold text-green">680 / 850</span>
+                </div>
+                <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                  <span class="small text-dimmer">Verification Token</span><span class="mono small">Valid · 1h</span>
+                </div>
+                <div class="form-label mt-4" style="margin-top:8px">IPFS Identity Hash</div>
+                <div class="hash-text">QmXz7b4Ra9nK2Lm3pJ8vDcF1sT6wNqA0eYhXuWoRtGiVb</div>
+                <div class="form-label mt-4" style="margin-top:8px">Credit Record Hash</div>
+                <div class="hash-text">QmRt1a8Sb3nN2Mp5rL0qJ9wFfC7vDdB4gAhViUsQoGjTb</div>
+              </div>
+              <div style="margin-top:16px;display:flex;gap:8px">
+                <button class="btn btn-primary btn-sm" onclick="approveAutoLoan()">✓ Approve Loan</button>
+                <button class="btn btn-secondary btn-sm">📄 Download Report</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:var(--orange-dim)">📊</div>
+              <div><div class="card-title">Recent Verifications</div><div class="card-sub">Institution activity log</div></div>
+            </div>
+            <table>
+              <thead><tr><th>DID</th><th>Institution</th><th>Score</th><th>Result</th><th>Time</th></tr></thead>
+              <tbody>
+                <tr><td class="mono text-green">#1042</td><td>SBI Grameen</td><td class="text-green">680</td><td><span class="badge active">Verified</span></td><td class="small text-dimmer">Now</td></tr>
+                <tr><td class="mono text-green">#1039</td><td>NABARD</td><td class="text-green">720</td><td><span class="badge active">Verified</span></td><td class="small text-dimmer">2h ago</td></tr>
+                <tr><td class="mono text-green">#1031</td><td>IFFCO Bank</td><td class="text-orange">530</td><td><span class="badge active">Verified</span></td><td class="small text-dimmer">5h ago</td></tr>
+                <tr><td class="mono text-green">#1028</td><td>Coop Bank</td><td class="text-green">660</td><td><span class="badge active">Verified</span></td><td class="small text-dimmer">1d ago</td></tr>
+                <tr><td class="mono" style="color:var(--red)">#1020</td><td>SBI Grameen</td><td>—</td><td><span class="badge rejected">Invalid</span></td><td class="small text-dimmer">2d ago</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ BLOCKCHAIN EXPLORER ══ -->
+      <div id="page-blockchain" class="page">
+        <div class="grid-2" style="margin-bottom:20px">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:rgba(130,80,255,0.1)">📋</div>
+              <div><div class="card-title">Contract Status</div><div class="card-sub">QuantumGuardDID.sol</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Contract Address</span>
+                <span class="mono small">0x7a3F...9C2d</span>
+              </div>
+              <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Network</span>
+                <span class="mono small">Polygon Amoy (80002)</span>
+              </div>
+              <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Total DIDs</span>
+                <span class="bold text-green">1,247</span>
+              </div>
+              <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Active DIDs</span>
+                <span class="bold text-green">986</span>
+              </div>
+              <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Total Validators</span>
+                <span class="bold">24</span>
+              </div>
+              <div class="flex-between" style="padding:10px;background:var(--bg3);border-radius:8px">
+                <span class="small text-dimmer">Total Staked</span>
+                <span class="bold text-green">1.84 MATIC</span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon" style="background:var(--blue-dim)">🔍</div>
+              <div><div class="card-title">Query Contract</div></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Function</label>
+              <select class="form-select" id="contractFn">
+                <option>verifyIdentity(did)</option>
+                <option>getIdentity(did)</option>
+                <option>getLandRecords(did)</option>
+                <option>getDIDByAddress(address)</option>
+                <option>validatorInfo(address)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Input</label>
+              <input class="form-input" id="contractInput" placeholder="e.g. 1042" value="1042">
+            </div>
+            <button class="btn btn-blue w-full" style="width:100%;margin-bottom:16px" onclick="queryContract()">Call Contract</button>
+            <div id="contractResult" style="display:none">
+              <div class="form-label">Result</div>
+              <pre style="background:var(--bg);padding:14px;border-radius:8px;border:1px solid var(--border2);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green);overflow-x:auto;white-space:pre-wrap" id="contractResultText"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:var(--green-dim)">⛓</div>
+            <div><div class="card-title">Recent Transactions</div><div class="card-sub">On-chain QuantumGuard events</div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tx Hash</th><th>Event</th><th>DID</th><th>From</th><th>Gas</th><th>Block</th><th>Age</th></tr></thead>
+              <tbody>
+                <tr><td class="mono small text-blue">0x7f3a...c92d</td><td><span class="badge active">DIDActivated</span></td><td class="mono">#1247</td><td class="mono small">0x7a3F...d9C2</td><td class="mono small">0.0021 MATIC</td><td class="mono small">47,382,910</td><td class="small text-dimmer">2m</td></tr>
+                <tr><td class="mono small text-blue">0x2c1b...a8f1</td><td><span class="badge disbursed">CreditUpdated</span></td><td class="mono">#1042</td><td class="mono small">0x4F2a...b391</td><td class="mono small">0.0018 MATIC</td><td class="mono small">47,382,907</td><td class="small text-dimmer">18m</td></tr>
+                <tr><td class="mono small text-blue">0xb4d2...7e30</td><td><span class="badge review">Approved</span></td><td class="mono">#1246</td><td class="mono small">0x9cD1...f022</td><td class="mono small">0.0015 MATIC</td><td class="mono small">47,382,901</td><td class="small text-dimmer">34m</td></tr>
+                <tr><td class="mono small text-blue">0x9a4c...12b7</td><td><span class="badge active">LandVerified</span></td><td class="mono">#1042</td><td class="mono small">0x2bA8...44c7</td><td class="mono small">0.0019 MATIC</td><td class="mono small">47,382,888</td><td class="small text-dimmer">1h</td></tr>
+                <tr><td class="mono small text-blue">0x3d8e...c711</td><td><span class="badge validator">DIDRegistered</span></td><td class="mono">#1247</td><td class="mono small">0x8d4F...0f5D</td><td class="mono small">0.0024 MATIC</td><td class="mono small">47,382,870</td><td class="small text-dimmer">2h</td></tr>
+                <tr><td class="mono small text-blue">0xf1a3...8b29</td><td><span class="badge validator">Staked</span></td><td class="mono">—</td><td class="mono small">0xA1b2...C3d4</td><td class="mono small">0.0009 MATIC</td><td class="mono small">47,382,841</td><td class="small text-dimmer">3h</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ SETTINGS ══ -->
+      <div id="page-settings" class="page">
+        <div class="grid-2">
+          <div>
+            <div class="card mb-4" style="margin-bottom:16px">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:var(--green-dim)">🔑</div>
+                <div><div class="card-title">Wallet & Authentication</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div><div class="form-label">Connected Wallet</div><div class="hash-text">0x7a3F9c2d8e1b4A0f6C5d3E2a8B7c1D4f0E9a2C6b5</div></div>
+                <div><div class="form-label">JWT Token (7 days)</div><div class="hash-text">eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiMHg3YTNm...</div></div>
+                <div class="flex-between" style="padding:12px;background:var(--bg3);border-radius:8px">
+                  <span class="small">Biometric Auth</span>
+                  <span class="badge active">✓ Enabled</span>
+                </div>
+                <div class="flex-between" style="padding:12px;background:var(--bg3);border-radius:8px">
+                  <span class="small">Auto-sync interval</span>
+                  <select class="form-select" style="width:auto;padding:4px 8px;font-size:12px"><option>5 min</option><option>15 min</option><option>1 hour</option></select>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="showToast('error','Wallet disconnected')">Disconnect Wallet</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:var(--blue-dim)">🌐</div>
+                <div><div class="card-title">Network Configuration</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div class="form-group">
+                  <label class="form-label">RPC Endpoint</label>
+                  <input class="form-input" value="https://rpc-amoy.polygon.technology">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">IPFS Gateway</label>
+                  <input class="form-input" value="https://ipfs.infura.io:5001">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Backend API</label>
+                  <input class="form-input" value="https://api.quantumguard.io">
+                </div>
+                <div class="flex-between" style="padding:12px;background:var(--bg3);border-radius:8px">
+                  <span class="small">Offline Mode</span>
+                  <label style="cursor:pointer;display:flex;align-items:center;gap:8px">
+                    <input type="checkbox" id="offlineToggle" style="accent-color:var(--green)">
+                    <span class="small text-dimmer">Force offline</span>
+                  </label>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="showToast('success','Settings saved!')">Save Settings</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card mb-4" style="margin-bottom:16px">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:var(--orange-dim)">🔄</div>
+                <div><div class="card-title">Emergency Recovery</div></div>
+              </div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.7">
+                Set up recovery addresses for emergency access. Requires 3 validator signatures to execute wallet transfer.
+              </div>
+              <div class="form-group">
+                <label class="form-label">Recovery Address 1</label>
+                <input class="form-input" value="0xF3a1b2c3...d4e5f6">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Recovery Address 2</label>
+                <input class="form-input" value="0x8bD2e3f4...a5b6c7">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Recovery Address 3</label>
+                <input class="form-input" placeholder="0x...">
+              </div>
+              <button class="btn btn-secondary btn-sm w-full" style="width:100%" onclick="showToast('info','Recovery addresses updated on-chain')">Update Recovery</button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-icon" style="background:var(--red-dim)">⚠️</div>
+                <div><div class="card-title">Danger Zone</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <button class="btn btn-danger w-full" style="width:100%" onclick="showToast('error','This action requires 3 validator signatures')">🗑 Delete Identity</button>
+                <button class="btn btn-secondary w-full" style="width:100%" onclick="showToast('info','All local data cleared. Blockchain data persists.')">🧹 Clear Local Data</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ NOTIFICATIONS ══ -->
+      <div id="page-notifications" class="page">
+        <div style="max-width:600px">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="padding:16px 20px;background:var(--card);border:1px solid rgba(0,200,120,0.2);border-radius:12px;border-left:3px solid var(--green)">
+              <div class="flex-between mb-4" style="margin-bottom:6px"><span class="bold">DID #1247 Activated!</span><span class="small text-dimmer">2m ago</span></div>
+              <div class="small text-dimmer">Ramesh Kumar's identity has been verified by 3 validators and is now active on Polygon.</div>
+            </div>
+            <div style="padding:16px 20px;background:var(--card);border:1px solid rgba(0,153,255,0.2);border-radius:12px;border-left:3px solid var(--blue)">
+              <div class="flex-between mb-4" style="margin-bottom:6px"><span class="bold">New Approval Request</span><span class="small text-dimmer">5h ago</span></div>
+              <div class="small text-dimmer">Priya Devi (DID #1246) has nominated you as a validator. Review in the Approvals section.</div>
+              <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="showPage('validator')">Review Now</button>
+            </div>
+            <div style="padding:16px 20px;background:var(--card);border:1px solid rgba(255,122,0,0.2);border-radius:12px;border-left:3px solid var(--orange)">
+              <div class="flex-between mb-4" style="margin-bottom:6px"><span class="bold">Loan Due in 7 Days</span><span class="small text-dimmer">1d ago</span></div>
+              <div class="small text-dimmer">SBI Grameen Kisan Credit (₹50,000) is due on Apr 5, 2025. Repay to improve your credit score.</div>
+              <button class="btn btn-sm btn-secondary" style="margin-top:10px" onclick="showPage('loans')">View Loan</button>
+            </div>
+            <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border2);border-radius:12px">
+              <div class="flex-between mb-4" style="margin-bottom:6px"><span class="bold">Credit Score Updated</span><span class="small text-dimmer">2d ago</span></div>
+              <div class="small text-dimmer">Your credit score increased from 580 to 680 after loan repayment. You're now eligible for larger loans.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════ MODALS ══ -->
+
+<!-- QR Modal -->
+<div class="modal-overlay" id="qrModal" onclick="closeModal('qrModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">📱 Digital Identity QR</div>
+    <div class="modal-sub">Show this to banks or institutions for instant DID verification</div>
+    <div style="text-align:center;margin:20px 0">
+      <div class="qr-wrap" style="display:inline-block">
+        <canvas id="qrCanvas" width="200" height="200"></canvas>
+      </div>
+      <div style="margin-top:16px;font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--green)">DID #1042</div>
+      <div class="mono small text-dimmer" style="margin-top:4px">Valid for 1 hour · Ramesh Kumar</div>
+    </div>
+    <div class="form-label">Verification Token</div>
+    <div class="hash-text">eyJkaWQiOjEwNDIsInZlcmlmaWVkIjp0cnVlLCJ0aW1lc3RhbXAiOjE3MDk0...Xd8</div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('qrModal')">Close</button>
+      <button class="btn btn-primary" onclick="showToast('success','QR saved to gallery!')">💾 Save QR</button>
+    </div>
+  </div>
+</div>
+
+<!-- Share DID Modal -->
+<div class="modal-overlay" id="shareModal" onclick="closeModal('shareModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">🔗 Share Your DID</div>
+    <div class="modal-sub">Verifiable credential for institutions</div>
+    <div class="form-group">
+      <label class="form-label">Verification URL</label>
+      <div style="display:flex;gap:8px">
+        <input class="form-input" value="https://verify.quantumguard.io/did/1042" readonly>
+        <button class="btn btn-secondary btn-sm" onclick="showToast('success','Copied!')">Copy</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">W3C DID Document</label>
+      <pre style="background:var(--bg);padding:12px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green);overflow-x:auto">{
+  "@context": "https://www.w3.org/ns/did/v1",
+  "id": "did:polygon:amoy:1042",
+  "controller": "0x7a3F9c2d...d9C2",
+  "verificationMethod": [{
+    "id": "did:polygon:amoy:1042#key-1",
+    "type": "EcdsaSecp256k1",
+    "controller": "did:polygon:amoy:1042"
+  }],
+  "ipfsHash": "QmXz7b4Ra9nK2Lm3pJ8v..."
+}</pre>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('shareModal')">Close</button>
+      <button class="btn btn-primary" onclick="showToast('success','DID document exported!')">Export JSON</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loan Application Modal -->
+<div class="modal-overlay" id="loanModal" onclick="closeModal('loanModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">💳 Apply for Microloan</div>
+    <div class="modal-sub">Your DID #1042 will be verified on Polygon. Credit score: 680</div>
+    <div class="form-group">
+      <label class="form-label">Institution</label>
+      <select class="form-select">
+        <option>SBI Grameen Bank</option>
+        <option>NABARD</option>
+        <option>IFFCO Kisan</option>
+        <option>Cooperative Bank</option>
+      </select>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label">Amount (₹)</label>
+        <input class="form-input" placeholder="e.g. 50000" value="75000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Term (months)</label>
+        <select class="form-select"><option>6</option><option selected>12</option><option>18</option><option>24</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Purpose</label>
+      <input class="form-input" placeholder="e.g. Seeds and fertilizer" value="Kharif crop seeds and fertilizer">
+    </div>
+    <div style="padding:12px;background:var(--green-dim);border-radius:8px;border:1px solid var(--border);font-size:12px;color:var(--text2);margin-bottom:16px">
+      ✓ Based on credit score 680 — Max eligible: <strong style="color:var(--green)">₹1,36,000</strong>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('loanModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="applyLoan()">🚀 Submit Application</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stake Modal -->
+<div class="modal-overlay" id="stakeModal" onclick="closeModal('stakeModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">🔒 Add Validator Stake</div>
+    <div class="modal-sub">Stake MATIC to activate/increase your validator role. Min: 0.01 MATIC</div>
+    <div class="form-group">
+      <label class="form-label">Amount (MATIC)</label>
+      <input class="form-input" placeholder="0.01" value="0.05" id="stakeAmount">
+    </div>
+    <div style="padding:12px;background:var(--bg3);border-radius:8px;font-size:12px;color:var(--text2);margin-bottom:16px">
+      ⚠️ Your stake is subject to <strong style="color:var(--red)">50% slashing</strong> if fraud is detected. Only stake if you're a trusted community member.
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('stakeModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="stakeValidator()">Stake MATIC</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ══ STATE ══
+let currentPage = 'dashboard';
+let regStep = 0;
+let faceCapDone = false;
+let fpCapDone = false;
+let approvalCount = 3;
+
+// ══ PAGE NAVIGATION ══
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  currentPage = id;
+
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(`'${id}'`)) n.classList.add('active');
+  });
+
+  const titles = {
+    dashboard: 'Dashboard', identity: 'My Identity', register: 'Register DID',
+    loans: 'Loans', credit: 'Credit Score', land: 'Land Records',
+    validator: 'Validator Approvals', staking: 'Validator Staking',
+    verify: 'Verify DID (Institution)', blockchain: 'Blockchain Explorer',
+    settings: 'Settings', notifications: 'Notifications'
+  };
+  document.getElementById('pageTitle').textContent = titles[id] || id;
+}
+
+// ══ ROLE SWITCHER ══
+function switchRole(role, btn) {
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const labels = { farmer: 'Farmer', validator: 'Validator', bank: 'Bank Officer', admin: 'Admin' };
+  document.getElementById('roleLabel').textContent = labels[role];
+  showToast('info', `Switched to ${labels[role]} view`);
+}
+
+// ══ REGISTRATION WIZARD ══
+function regNext(step) {
+  // Validate step 0
+  if (step === 0) {
+    const name = document.getElementById('r_name').value;
+    if (!name.trim()) { showToast('error', 'Please fill in your name'); return; }
+    document.getElementById('rev_name').textContent = name;
+    document.getElementById('rev_loc').textContent = document.getElementById('r_district').value;
+  }
+  // Validate step 1
+  if (step === 1) {
+    if (!faceCapDone || !fpCapDone) { showToast('error', 'Complete both biometric captures'); return; }
+  }
+  // Validate step 2
+  if (step === 2) {
+    const v1 = document.getElementById('v1').value;
+    if (!v1.startsWith('0x')) { showToast('error', 'Enter valid wallet addresses for validators'); return; }
+  }
+  // Hide current
+  document.getElementById('regStep' + step).style.display = 'none';
+  document.getElementById('step' + step).classList.remove('active');
+  document.getElementById('step' + step).classList.add('done');
+  document.getElementById('step' + step).querySelector('.step-circle').textContent = '✓';
+  // Show next
+  regStep = step + 1;
+  document.getElementById('regStep' + regStep).style.display = 'block';
+  document.getElementById('step' + regStep).classList.add('active');
+}
+
+function regBack(step) {
+  document.getElementById('regStep' + step).style.display = 'none';
+  regStep = step - 1;
+  document.getElementById('step' + regStep).classList.remove('done');
+  document.getElementById('step' + regStep).classList.add('active');
+  document.getElementById('step' + regStep).querySelector('.step-circle').textContent = regStep + 1;
+  document.getElementById('regStep' + regStep).style.display = 'block';
+}
+
+// ══ BIOMETRICS ══
+function captureFace() {
+  const btn = document.getElementById('faceBtn');
+  const icon = document.getElementById('faceIcon');
+  const line = document.getElementById('faceScanLine');
+  const status = document.getElementById('faceStatus');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Processing...';
+  line.style.display = 'block';
+
+  setTimeout(() => {
+    icon.textContent = '😊';
+    line.style.display = 'none';
+    faceCapDone = true;
+    btn.textContent = '✓ Face Captured';
+    btn.style.background = 'var(--green)';
+    btn.style.color = '#000';
+    status.textContent = '✓ Hash generated';
+    status.style.color = 'var(--green)';
+    updateBioStatus();
+    showToast('success', 'Face biometric captured (on-device only)');
+  }, 2500);
+}
+
+function captureFingerprint() {
+  const btn = document.getElementById('fpBtn');
+  const icon = document.getElementById('fpIcon');
+  const status = document.getElementById('fpStatus');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Scanning...';
+  icon.textContent = '👆';
+
+  let dots = 0;
+  const interval = setInterval(() => {
+    dots = (dots + 1) % 4;
+    icon.textContent = ['👆','🖐','✋','🤚'][dots];
+  }, 300);
+
+  setTimeout(() => {
+    clearInterval(interval);
+    icon.textContent = '✅';
+    fpCapDone = true;
+    btn.textContent = '✓ Fingerprint Scanned';
+    btn.style.background = 'var(--green)';
+    btn.style.color = '#000';
+    status.textContent = '✓ Verified';
+    status.style.color = 'var(--green)';
+    updateBioStatus();
+    showToast('success', 'Fingerprint authenticated via device security');
+  }, 2000);
+}
+
+function updateBioStatus() {
+  if (faceCapDone && fpCapDone) {
+    const hash = generateHash();
+    document.getElementById('biometricHash').style.display = 'block';
+    document.getElementById('bioHashText').textContent = hash;
+    document.getElementById('bioNextBtn').disabled = false;
+    document.getElementById('bioNextBtn').style.opacity = '1';
+  }
+}
+
+function generateHash() {
+  const chars = '0123456789abcdef';
+  return Array.from({length: 64}, () => chars[Math.floor(Math.random() * 16)]).join('');
+}
+
+// ══ SUBMIT DID ══
+async function submitDID() {
+  const btn = document.getElementById('submitBtn');
+  const progress = document.getElementById('submitProgress');
+  const step = document.getElementById('submitStep');
+  const bar = document.getElementById('submitBar');
+
+  btn.disabled = true;
+  progress.style.display = 'block';
+
+  const steps = [
+    [0,   'Encrypting identity data (AES-256)...'],
+    [20,  'Uploading to IPFS...'],
+    [45,  'Connecting to Polygon...'],
+    [60,  'Signing transaction...'],
+    [75,  'Waiting for block confirmation...'],
+    [90,  'Minting DID on-chain...'],
+    [100, '✓ DID minted successfully!']
+  ];
+
+  for (const [pct, msg] of steps) {
+    await delay(600 + Math.random() * 400);
+    bar.style.width = pct + '%';
+    step.textContent = msg;
+  }
+
+  await delay(500);
+  showToast('success', '🎉 DID #1248 minted on Polygon Amoy!');
+  await delay(800);
+
+  // Show success state
+  progress.innerHTML = `
+    <div style="text-align:center;padding:20px">
+      <div style="font-size:40px;margin-bottom:12px">🎉</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--green);margin-bottom:6px">DID #1248 Created!</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Awaiting 3 validator approvals to activate</div>
+      <div class="hash-text">Tx: 0x${generateHash().slice(0,40)}...</div>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="showPage('identity')">View My Identity →</button>
+    </div>
+  `;
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ══ VALIDATOR ACTIONS ══
+function approveDID(did) {
+  showToast('success', `✓ DID #${did} approved! Transaction submitted to Polygon.`);
+  // Remove card with animation
+  event.target.closest('.approval-card').style.opacity = '0';
+  event.target.closest('.approval-card').style.transition = 'opacity 0.3s';
+  setTimeout(() => event.target.closest('.approval-card').remove(), 300);
+  approvalCount--;
+  // Update badge
+  const badge = document.querySelector('.nav-item[onclick*="validator"] .nav-badge');
+  if (badge) {
+    badge.textContent = approvalCount;
+    if (approvalCount === 0) badge.remove();
+  }
+}
+
+function rejectDID(did) {
+  const reason = prompt('Reason for rejection:');
+  if (reason !== null) {
+    showToast('error', `DID #${did} rejected: ${reason}`);
+    event.target.closest('.approval-card').style.opacity = '0';
+    event.target.closest('.approval-card').style.transition = 'opacity 0.3s';
+    setTimeout(() => event.target.closest('.approval-card').remove(), 300);
+  }
+}
+
+// ══ CREDIT EVENT ══
+async function reportCreditEvent() {
+  const type = document.getElementById('creditEventType').value;
+  const amount = document.getElementById('creditAmount').value;
+  const did = document.getElementById('creditDID').value;
+
+  showToast('info', 'Uploading credit event to IPFS...');
+  await delay(1200);
+  showToast('info', 'Updating blockchain record...');
+  await delay(1000);
+  showToast('success', `Credit event '${type}' recorded for DID #${did}. Score updated!`);
+}
+
+// ══ LAND RECORD ══
+async function submitLandRecord() {
+  showToast('info', 'Uploading geotagged photo to IPFS...');
+  await delay(1500);
+  showToast('info', 'Submitting land record to Polygon...');
+  await delay(1000);
+  const geohash = 'tf' + Math.random().toString(36).slice(2,8);
+  showToast('success', `Land record submitted! Geohash: ${geohash}`);
+}
+
+// ══ INSTITUTION VERIFY ══
+async function verifyDID() {
+  const input = document.getElementById('verifyInput').value;
+  showToast('info', `Querying Polygon for DID #${input}...`);
+  await delay(1400);
+  document.getElementById('verifyResult').style.display = 'block';
+  document.getElementById('verifyResult').scrollIntoView({ behavior: 'smooth' });
+  showToast('success', `DID #${input} verified! Active on Polygon Amoy.`);
+}
+
+async function approveAutoLoan() {
+  showToast('success', 'Loan approved based on verified DID #1042. Credit event will be recorded.');
+  closeModal('loanModal');
+}
+
+// ══ LOAN REPAY ══
+async function repayLoan() {
+  showToast('info', 'Processing repayment...');
+  await delay(1500);
+  showToast('success', '₹50,000 repaid! Credit score +40 pts. Transaction on Polygon.');
+}
+
+// ══ APPLY LOAN ══
+async function applyLoan() {
+  closeModal('loanModal');
+  showToast('info', 'Submitting loan application...');
+  await delay(1200);
+  showToast('info', 'Verifying DID on blockchain...');
+  await delay(1000);
+  showToast('success', 'Loan application submitted! Bank will review within 24h.');
+}
+
+// ══ STAKING ══
+async function stakeValidator() {
+  const amount = document.getElementById('stakeAmount').value;
+  closeModal('stakeModal');
+  showToast('info', `Staking ${amount} MATIC...`);
+  await delay(1500);
+  showToast('success', `${amount} MATIC staked! You're now an active validator.`);
+}
+
+// ══ CONTRACT QUERY ══
+async function queryContract() {
+  const fn = document.getElementById('contractFn').value;
+  const input = document.getElementById('contractInput').value;
+  const el = document.getElementById('contractResult');
+  const text = document.getElementById('contractResultText');
+
+  el.style.display = 'none';
+  showToast('info', 'Calling contract...');
+  await delay(900);
+
+  const results = {
+    'verifyIdentity(did)': `{\n  "active": true,\n  "ipfsHash": "QmXz7b4Ra9nK2Lm3pJ8vDcF1sT6wNqA0eYh",\n  "creditHash": "QmRt1a8Sb3nN2Mp5rL0qJ9wFfC7vDdB4gAh"\n}`,
+    'getIdentity(did)': `{\n  "id": ${input},\n  "owner": "0x7a3F9c2d8e1b...d9C2",\n  "ipfsHash": "QmXz7b4Ra...",\n  "approvalCount": 3,\n  "active": true,\n  "createdAt": 1736985600\n}`,
+    'getLandRecords(did)': `[\n  { "photoHash": "QmLand1...", "geoHash": "tf24xk91", "verified": true },\n  { "photoHash": "QmLand2...", "geoHash": "tf24xk88", "verified": true }\n]`,
+    'getDIDByAddress(address)': `1042`,
+    'validatorInfo(address)': `{\n  "stakeAmount": "50000000000000000",\n  "approvalCount": 142,\n  "fraudCount": 0,\n  "slashed": false\n}`,
+  };
+
+  text.textContent = results[fn] || `{ "result": "OK", "did": ${input} }`;
+  el.style.display = 'block';
+}
+
+// ══ MODALS ══
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'qrModal') drawQR();
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Draw fake QR
+function drawQR() {
+  const canvas = document.getElementById('qrCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const size = 200;
+  const cells = 21;
+  const cell = size / cells;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#000000';
+
+  // Generate deterministic QR-like pattern
+  const seed = 1042;
+  const pat = (r, c) => {
+    if ((r < 7 && c < 7) || (r < 7 && c >= cells - 7) || (r >= cells - 7 && c < 7)) return true;
+    return (r * 13 + c * 7 + seed) % 3 === 0;
+  };
+
+  for (let r = 0; r < cells; r++) {
+    for (let c = 0; c < cells; c++) {
+      if (pat(r, c)) {
+        ctx.fillRect(c * cell, r * cell, cell - 0.5, cell - 0.5);
+      }
+    }
+  }
+
+  // Draw position squares
+  [[0,0],[0,cells-7],[cells-7,0]].forEach(([r,c]) => {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(c * cell, r * cell, 7 * cell, 7 * cell);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect((c+1)*cell, (r+1)*cell, 5*cell, 5*cell);
+    ctx.fillStyle = '#000';
+    ctx.fillRect((c+2)*cell, (r+2)*cell, 3*cell, 3*cell);
+  });
+}
+
+// ══ TOASTS ══
+function showToast(type, msg) {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `
+    <div class="toast-icon">${icons[type]}</div>
+    <div class="toast-text">${msg}</div>
+    <div class="toast-close" onclick="this.parentElement.remove()">×</div>
+  `;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.animation = 'fadeOut 0.3s forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+// ══ INIT ══
+document.addEventListener('DOMContentLoaded', () => {
+  // Simulate live block counter
+  setInterval(() => {
+    document.querySelectorAll('.block-num').forEach((el, i) => {
+      if (i === 0) el.textContent = `Block #${(47382910 + Math.floor(Date.now() / 2000)).toLocaleString()}`;
+    });
+  }, 2000);
+
+  showToast('success', 'QuantumGuard connected to Polygon Amoy');
+});
+</script>
+</body>
+</html>
